@@ -1,15 +1,21 @@
 // ============================================================
-//  app.js – Lógica principal + integração com GitHub (pasta /arquivos)
+//  app.js – Lógica principal + integração com GitHub (pasta dinâmica)
 // ============================================================
 
-// Estado global
+// ==================== ESTADO GLOBAL ====================
 let pastaHandle = null;
 let arquivos = [];
 let arquivoAtual = null;
 let favoritos = JSON.parse(localStorage.getItem('favoritos') || '[]');
 let historico = JSON.parse(localStorage.getItem('historico') || '[]');
 
-// DOM
+// Configurações GitHub (persistentes)
+let githubToken = localStorage.getItem('github_token') || '';
+let githubRepo = localStorage.getItem('github_repo') || '';
+let githubBranch = localStorage.getItem('github_branch') || 'main';
+let githubPasta = localStorage.getItem('github_pasta') || 'arquivos/'; // padrão
+
+// ==================== DOM ====================
 const listaEl = document.getElementById('lista-arquivos');
 const editor = document.getElementById('editor');
 const pesquisaInput = document.getElementById('pesquisa');
@@ -18,7 +24,7 @@ const pastaAtualEl = document.getElementById('pasta-atual');
 const nomeArqEl = document.getElementById('nome-arquivo');
 const statsArqEl = document.getElementById('stats-arquivo');
 
-// ==================== HELPERS ====================
+// ==================== HELPERS LOCAIS ====================
 function atualizarContador() {
   contadorEl.textContent = `${arquivos.length} arquivo${arquivos.length !== 1 ? 's' : ''}`;
 }
@@ -136,7 +142,7 @@ async function abrirArquivo(nome) {
   }
 }
 
-// ==================== SALVAR ====================
+// ==================== SALVAR LOCAL ====================
 document.getElementById('btnSave').addEventListener('click', async () => {
   if (!arquivoAtual) return alert('Nenhum arquivo aberto.');
   try {
@@ -294,7 +300,7 @@ document.getElementById('btnStats').addEventListener('click', () => {
   });
 });
 
-// ==================== TEMA ====================
+// ==================== TEMA CLARO/ESCURO ====================
 document.getElementById('btnTheme').addEventListener('click', () => {
   document.body.classList.toggle('dark');
   localStorage.setItem('tema', document.body.classList.contains('dark') ? 'dark' : 'light');
@@ -304,21 +310,17 @@ if (localStorage.getItem('tema') === 'dark') {
 }
 
 // ==================================================================
-// ==================== GITHUB – PASTA "arquivos/" ==================
+// ==================== GITHUB – PASTA DINÂMICA ====================
 // ==================================================================
 
-// --- Configuração do GitHub (token + repositório) ---
-let githubToken = localStorage.getItem('github_token');
-let githubRepo = localStorage.getItem('github_repo') || ''; // formato: "usuario/repositorio"
-let githubBranch = localStorage.getItem('github_branch') || 'main';
-
-// Botão para configurar token/repositório
+// --- Botão de configuração (🔑) ---
 document.getElementById('btnGitHubConfig').addEventListener('click', () => {
+  // Token
   const token = prompt('Digite seu token de acesso do GitHub (ou deixe em branco para remover):', githubToken || '');
   if (token === null) return;
   if (token.trim() === '') {
     localStorage.removeItem('github_token');
-    githubToken = null;
+    githubToken = '';
     alert('Token removido.');
   } else {
     localStorage.setItem('github_token', token.trim());
@@ -326,23 +328,35 @@ document.getElementById('btnGitHubConfig').addEventListener('click', () => {
     alert('Token salvo.');
   }
 
+  // Repositório
   const repo = prompt('Digite o repositório no formato "usuario/repositorio":', githubRepo || '');
   if (repo !== null && repo.trim() !== '') {
     localStorage.setItem('github_repo', repo.trim());
     githubRepo = repo.trim();
   }
 
+  // Branch
   const branch = prompt('Digite o branch (padrão: main):', githubBranch || 'main');
   if (branch !== null && branch.trim() !== '') {
     localStorage.setItem('github_branch', branch.trim());
     githubBranch = branch.trim();
   }
+
+  // Pasta de destino padrão
+  const pasta = prompt('Pasta de destino padrão no repositório (ex: arquivos/, conteudo/, ou vazio para raiz):', githubPasta || '');
+  if (pasta !== null) {
+    let pastaTratada = pasta.trim();
+    if (pastaTratada && !pastaTratada.endsWith('/')) pastaTratada += '/';
+    localStorage.setItem('github_pasta', pastaTratada);
+    githubPasta = pastaTratada;
+    alert(`Pasta padrão definida: "${githubPasta || 'raiz'}"`);
+  }
 });
 
-// --- Função para obter o SHA de um arquivo (dentro da pasta "arquivos/") ---
-async function obterShaArquivoGitHub(nomeArquivo) {
+// --- Função para obter SHA de um arquivo (em qualquer pasta) ---
+async function obterShaArquivoGitHub(nomeArquivo, pasta) {
   if (!githubToken || !githubRepo) return null;
-  const caminho = `arquivos/${encodeURIComponent(nomeArquivo)}`; // <-- AQUI ESTÁ A CORREÇÃO
+  const caminho = pasta + encodeURIComponent(nomeArquivo);
   const url = `https://api.github.com/repos/${githubRepo}/contents/${caminho}`;
   try {
     const response = await fetch(url, {
@@ -358,16 +372,18 @@ async function obterShaArquivoGitHub(nomeArquivo) {
   }
 }
 
-// --- Enviar um arquivo para a pasta "arquivos/" do GitHub ---
-async function enviarArquivoParaGitHub(nomeArquivo, conteudo) {
+// --- Função para enviar um arquivo para uma pasta específica ---
+async function enviarArquivoParaGitHub(nomeArquivo, conteudo, pasta) {
   if (!githubToken) { alert('Token não configurado. Clique em 🔑 primeiro.'); return false; }
   if (!githubRepo) { alert('Repositório não configurado.'); return false; }
 
-  const caminho = `arquivos/${encodeURIComponent(nomeArquivo)}`; // <-- AQUI ESTÁ A CORREÇÃO
+  const caminho = pasta + encodeURIComponent(nomeArquivo);
   const url = `https://api.github.com/repos/${githubRepo}/contents/${caminho}`;
 
-  let sha = await obterShaArquivoGitHub(nomeArquivo);
+  // Obter SHA (se existir)
+  let sha = await obterShaArquivoGitHub(nomeArquivo, pasta);
 
+  // Codificar conteúdo para Base64
   const contentBase64 = btoa(unescape(encodeURIComponent(conteudo)));
 
   const body = {
@@ -397,20 +413,37 @@ async function enviarArquivoParaGitHub(nomeArquivo, conteudo) {
   }
 }
 
-// --- Botão "Enviar para GitHub" (arquivo atual) ---
+// --- Botão "Enviar para GitHub" (arquivo atual, com escolha de pasta) ---
 document.getElementById('btnGitHubPush').addEventListener('click', async () => {
   if (!arquivoAtual) return alert('Nenhum arquivo aberto.');
   if (!githubToken) { alert('Configure o token e repositório primeiro (botão 🔑).'); return; }
-  const sucesso = await enviarArquivoParaGitHub(arquivoAtual.nome, editor.value);
-  if (sucesso) alert(`✅ "${arquivoAtual.nome}" enviado com sucesso para a pasta /arquivos!`);
+
+  // Pergunta se quer usar a pasta padrão
+  const usarPadrao = confirm(`Usar pasta padrão "${githubPasta || 'raiz'}"? (Clique em "Cancelar" para especificar outra)`);
+  let pastaDestino = githubPasta;
+  if (!usarPadrao) {
+    const resp = prompt('Digite a pasta de destino (ex: conteudo/, musica/, ou vazio para raiz):', '');
+    if (resp === null) return; // cancelou
+    let pastaDigitada = resp.trim();
+    if (pastaDigitada && !pastaDigitada.endsWith('/')) pastaDigitada += '/';
+    pastaDestino = pastaDigitada;
+  }
+
+  const sucesso = await enviarArquivoParaGitHub(arquivoAtual.nome, editor.value, pastaDestino);
+  if (sucesso) alert(`✅ "${arquivoAtual.nome}" enviado para "${pastaDestino || 'raiz'}"!`);
 });
 
-// --- Botão "Puxar do GitHub" (da pasta "arquivos/") ---
+// --- Botão "Puxar do GitHub" (escolhe a pasta de origem) ---
 document.getElementById('btnGitHubPull').addEventListener('click', async () => {
   if (!arquivoAtual) return alert('Nenhum arquivo aberto.');
   if (!githubToken || !githubRepo) { alert('Configure token e repositório (🔑).'); return; }
 
-  const caminho = `arquivos/${encodeURIComponent(arquivoAtual.nome)}`; // <-- AQUI ESTÁ A CORREÇÃO
+  const pastaOrigem = prompt('Pasta de origem no GitHub (ex: arquivos/, conteudo/, ou vazio para raiz):', githubPasta || '');
+  if (pastaOrigem === null) return;
+  let pastaTratada = pastaOrigem.trim();
+  if (pastaTratada && !pastaTratada.endsWith('/')) pastaTratada += '/';
+
+  const caminho = pastaTratada + encodeURIComponent(arquivoAtual.nome);
   const url = `https://api.github.com/repos/${githubRepo}/contents/${caminho}?ref=${githubBranch}`;
 
   try {
@@ -419,7 +452,7 @@ document.getElementById('btnGitHubPull').addEventListener('click', async () => {
     });
     if (!response.ok) {
       if (response.status === 404) {
-        alert(`Arquivo "${arquivoAtual.nome}" não encontrado na pasta /arquivos do GitHub.`);
+        alert(`Arquivo "${arquivoAtual.nome}" não encontrado na pasta "${pastaTratada || 'raiz'}" do GitHub.`);
       } else {
         const error = await response.json();
         alert(`Erro: ${error.message}`);
@@ -427,32 +460,36 @@ document.getElementById('btnGitHubPull').addEventListener('click', async () => {
       return;
     }
     const data = await response.json();
+    // Decodificar Base64
     const conteudo = decodeURIComponent(escape(atob(data.content)));
+    // Atualizar editor e salvar localmente
     editor.value = conteudo;
     await salvarArquivo(arquivoAtual.handle, conteudo);
     arquivoAtual.conteudo = conteudo;
-    alert(`✅ "${arquivoAtual.nome}" atualizado a partir do GitHub (pasta /arquivos).`);
+    alert(`✅ "${arquivoAtual.nome}" atualizado a partir de "${pastaTratada || 'raiz'}" no GitHub.`);
   } catch (err) {
     alert(`❌ Erro ao puxar: ${err.message}`);
   }
 });
 
-// --- Botão "Sincronizar" (envia todos os arquivos locais para a pasta /arquivos) ---
+// --- Botão "Sincronizar" (envia todos os arquivos para uma pasta única) ---
 document.getElementById('btnGitHubSync').addEventListener('click', async () => {
   if (!pastaHandle) return alert('Abra uma pasta primeiro.');
   if (!githubToken || !githubRepo) { alert('Configure token e repositório (🔑).'); return; }
 
-  if (!confirm(`Enviar TODOS os ${arquivos.length} arquivos para a pasta /arquivos do GitHub?`)) return;
+  const pasta = prompt('Pasta de destino para TODOS os arquivos (ex: conteudo/, musica/, ou vazio para raiz):', githubPasta || '');
+  if (pasta === null) return;
+  let pastaTratada = pasta.trim();
+  if (pastaTratada && !pastaTratada.endsWith('/')) pastaTratada += '/';
 
-  let enviados = 0;
-  let erros = 0;
+  if (!confirm(`Enviar TODOS os ${arquivos.length} arquivos para "${pastaTratada || 'raiz'}"?`)) return;
 
+  let enviados = 0, erros = 0;
   for (const item of arquivos) {
     const conteudo = await lerArquivo(item.handle);
-    const ok = await enviarArquivoParaGitHub(item.nome, conteudo);
+    const ok = await enviarArquivoParaGitHub(item.nome, conteudo, pastaTratada);
     if (ok) enviados++; else erros++;
   }
-
   alert(`✅ Sincronização concluída!\nEnviados: ${enviados}\nErros: ${erros}`);
 });
 
@@ -461,3 +498,4 @@ editor.placeholder = 'Clique em "Abrir Pasta" para começar.';
 atualizarContador();
 
 if (githubToken) console.log('🔑 Token do GitHub carregado.');
+console.log(`📂 Pasta padrão GitHub: "${githubPasta || 'raiz'}"`);
