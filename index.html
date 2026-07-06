@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biblioteca TXT Pro</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1565c0" />
+</head>
+<body>
+
+  <!-- Cabeçalho -->
+  <header>
+    <div class="header-left">
+      <img src="assets/logo.png" alt="Logo" class="logo" />
+      <span>Biblioteca TXT Pro</span>
+    </div>
+    <div class="header-right">
+      <button id="btnTheme" title="Alternar tema">🌓</button>
+      <button id="btnStats" title="Estatísticas">📊</button>
+    </div>
+  </header>
+
+  <!-- Principal -->
+  <div id="principal">
+    <!-- Barra lateral -->
+    <aside id="menu">
+      <div class="menu-toolbar">
+        <button id="btnOpenFolder" title="Abrir pasta">📂 Abrir Pasta</button>
+        <button id="btnNewFile" title="Novo arquivo">➕</button>
+      </div>
+      <input id="pesquisa" placeholder="🔍 Pesquisar arquivos..." />
+      <div id="lista-arquivos"></div>
+      <div class="menu-footer">
+        <span id="contador-arquivos">0 arquivos</span>
+        <span id="pasta-atual"></span>
+      </div>
+    </aside>
+
+    <!-- Área do editor -->
+    <main id="conteudo">
+      <div id="barra-ferramentas">
+        <button id="btnSave" title="Salvar">💾 Salvar</button>
+        <button id="btnRename" title="Renomear">✏️ Renomear</button>
+        <button id="btnDelete" title="Excluir">🗑️ Excluir</button>
+        <button id="btnFavorite" title="Favoritar">⭐ Favoritar</button>
+        <button id="btnExportPDF" title="Exportar PDF">📄 PDF</button>
+        <button id="btnExportZIP" title="Exportar ZIP">📦 ZIP</button>
+        <button id="btnBackup" title="Fazer Backup">💽 Backup</button>
+      </div>
+      <div id="editor-wrapper">
+        <textarea id="editor" placeholder="Selecione ou crie um arquivo para começar..."></textarea>
+      </div>
+      <div id="info-arquivo">
+        <span id="nome-arquivo"></span>
+        <span id="stats-arquivo"></span>
+      </div>
+    </main>
+  </div>
+
+  <!-- Histórico e favoritos (ocultos, acessíveis via atalhos) -->
+  <div id="painel-lateral" style="display:none;">
+    <!-- Será implementado no JS -->
+  </div>
+
+  <script src="config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
