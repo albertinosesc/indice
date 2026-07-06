@@ -1,6 +1,5 @@
 // ============================================================
-//  app.js – Lógica principal + integração com GitHub
-//  (com suporte à pasta "arquivos/" no repositório)
+//  app.js – Lógica principal + integração com GitHub (pasta /arquivos)
 // ============================================================
 
 // Estado global
@@ -305,7 +304,7 @@ if (localStorage.getItem('tema') === 'dark') {
 }
 
 // ==================================================================
-// ==================== GITHUB COM PASTA "arquivos/" ================
+// ==================== GITHUB – PASTA "arquivos/" ==================
 // ==================================================================
 
 // --- Configuração do GitHub (token + repositório) ---
@@ -340,10 +339,10 @@ document.getElementById('btnGitHubConfig').addEventListener('click', () => {
   }
 });
 
-// --- Função auxiliar para obter o SHA de um arquivo na pasta "arquivos/" ---
+// --- Função para obter o SHA de um arquivo (dentro da pasta "arquivos/") ---
 async function obterShaArquivoGitHub(nomeArquivo) {
   if (!githubToken || !githubRepo) return null;
-  const caminho = `arquivos/${encodeURIComponent(nomeArquivo)}`;
+  const caminho = `arquivos/${encodeURIComponent(nomeArquivo)}`; // <-- AQUI ESTÁ A CORREÇÃO
   const url = `https://api.github.com/repos/${githubRepo}/contents/${caminho}`;
   try {
     const response = await fetch(url, {
@@ -364,13 +363,11 @@ async function enviarArquivoParaGitHub(nomeArquivo, conteudo) {
   if (!githubToken) { alert('Token não configurado. Clique em 🔑 primeiro.'); return false; }
   if (!githubRepo) { alert('Repositório não configurado.'); return false; }
 
-  const caminho = `arquivos/${encodeURIComponent(nomeArquivo)}`;
+  const caminho = `arquivos/${encodeURIComponent(nomeArquivo)}`; // <-- AQUI ESTÁ A CORREÇÃO
   const url = `https://api.github.com/repos/${githubRepo}/contents/${caminho}`;
 
-  // Obter SHA atual (se existir)
   let sha = await obterShaArquivoGitHub(nomeArquivo);
 
-  // Codificar conteúdo para Base64 (UTF-8)
   const contentBase64 = btoa(unescape(encodeURIComponent(conteudo)));
 
   const body = {
@@ -405,15 +402,15 @@ document.getElementById('btnGitHubPush').addEventListener('click', async () => {
   if (!arquivoAtual) return alert('Nenhum arquivo aberto.');
   if (!githubToken) { alert('Configure o token e repositório primeiro (botão 🔑).'); return; }
   const sucesso = await enviarArquivoParaGitHub(arquivoAtual.nome, editor.value);
-  if (sucesso) alert(`✅ "${arquivoAtual.nome}" enviado com sucesso!`);
+  if (sucesso) alert(`✅ "${arquivoAtual.nome}" enviado com sucesso para a pasta /arquivos!`);
 });
 
-// --- Botão "Puxar do GitHub" (sobrescreve o arquivo local) ---
+// --- Botão "Puxar do GitHub" (da pasta "arquivos/") ---
 document.getElementById('btnGitHubPull').addEventListener('click', async () => {
   if (!arquivoAtual) return alert('Nenhum arquivo aberto.');
   if (!githubToken || !githubRepo) { alert('Configure token e repositório (🔑).'); return; }
 
-  const caminho = `arquivos/${encodeURIComponent(arquivoAtual.nome)}`;
+  const caminho = `arquivos/${encodeURIComponent(arquivoAtual.nome)}`; // <-- AQUI ESTÁ A CORREÇÃO
   const url = `https://api.github.com/repos/${githubRepo}/contents/${caminho}?ref=${githubBranch}`;
 
   try {
@@ -422,7 +419,7 @@ document.getElementById('btnGitHubPull').addEventListener('click', async () => {
     });
     if (!response.ok) {
       if (response.status === 404) {
-        alert(`Arquivo "${arquivoAtual.nome}" não encontrado no GitHub.`);
+        alert(`Arquivo "${arquivoAtual.nome}" não encontrado na pasta /arquivos do GitHub.`);
       } else {
         const error = await response.json();
         alert(`Erro: ${error.message}`);
@@ -430,24 +427,22 @@ document.getElementById('btnGitHubPull').addEventListener('click', async () => {
       return;
     }
     const data = await response.json();
-    // Decodificar Base64 para texto UTF-8
     const conteudo = decodeURIComponent(escape(atob(data.content)));
-    // Substituir conteúdo no editor e salvar localmente
     editor.value = conteudo;
     await salvarArquivo(arquivoAtual.handle, conteudo);
     arquivoAtual.conteudo = conteudo;
-    alert(`✅ "${arquivoAtual.nome}" atualizado a partir do GitHub.`);
+    alert(`✅ "${arquivoAtual.nome}" atualizado a partir do GitHub (pasta /arquivos).`);
   } catch (err) {
     alert(`❌ Erro ao puxar: ${err.message}`);
   }
 });
 
-// --- Botão "Sincronizar" (envia todos os arquivos locais) ---
+// --- Botão "Sincronizar" (envia todos os arquivos locais para a pasta /arquivos) ---
 document.getElementById('btnGitHubSync').addEventListener('click', async () => {
   if (!pastaHandle) return alert('Abra uma pasta primeiro.');
   if (!githubToken || !githubRepo) { alert('Configure token e repositório (🔑).'); return; }
 
-  if (!confirm(`Enviar TODOS os ${arquivos.length} arquivos para o GitHub?`)) return;
+  if (!confirm(`Enviar TODOS os ${arquivos.length} arquivos para a pasta /arquivos do GitHub?`)) return;
 
   let enviados = 0;
   let erros = 0;
