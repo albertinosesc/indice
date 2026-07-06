@@ -10,7 +10,6 @@
 </head>
 <body>
 
-  <!-- Cabeçalho -->
   <header>
     <div class="header-left">
       <img src="assets/logo.png" alt="Logo" class="logo" />
@@ -22,13 +21,12 @@
     </div>
   </header>
 
-  <!-- Principal -->
   <div id="principal">
-    <!-- Barra lateral -->
     <aside id="menu">
       <div class="menu-toolbar">
-        <button id="btnOpenFolder" title="Abrir pasta">📂 Abrir Pasta</button>
-        <button id="btnNewFile" title="Novo arquivo">➕</button>
+        <button id="btnOpenFolder">📂 Abrir Pasta</button>
+        <button id="btnNewFile">➕</button>
+        <button id="btnGitHubConfig" title="Configurar GitHub">🔑</button>
       </div>
       <input id="pesquisa" placeholder="🔍 Pesquisar arquivos..." />
       <div id="lista-arquivos"></div>
@@ -38,16 +36,19 @@
       </div>
     </aside>
 
-    <!-- Área do editor -->
     <main id="conteudo">
       <div id="barra-ferramentas">
-        <button id="btnSave" title="Salvar">💾 Salvar</button>
-        <button id="btnRename" title="Renomear">✏️ Renomear</button>
-        <button id="btnDelete" title="Excluir">🗑️ Excluir</button>
-        <button id="btnFavorite" title="Favoritar">⭐ Favoritar</button>
-        <button id="btnExportPDF" title="Exportar PDF">📄 PDF</button>
-        <button id="btnExportZIP" title="Exportar ZIP">📦 ZIP</button>
-        <button id="btnBackup" title="Fazer Backup">💽 Backup</button>
+        <button id="btnSave">💾 Salvar</button>
+        <button id="btnRename">✏️ Renomear</button>
+        <button id="btnDelete">🗑️ Excluir</button>
+        <button id="btnFavorite">⭐ Favoritar</button>
+        <button id="btnExportPDF">📄 PDF</button>
+        <button id="btnExportZIP">📦 ZIP</button>
+        <button id="btnBackup">💽 Backup</button>
+        <!-- NOVOS BOTÕES GITHUB -->
+        <button id="btnGitHubPush">🚀 Enviar para GitHub</button>
+        <button id="btnGitHubPull">📥 Puxar do GitHub</button>
+        <button id="btnGitHubSync">🔄 Sincronizar</button>
       </div>
       <div id="editor-wrapper">
         <textarea id="editor" placeholder="Selecione ou crie um arquivo para começar..."></textarea>
@@ -57,11 +58,6 @@
         <span id="stats-arquivo"></span>
       </div>
     </main>
-  </div>
-
-  <!-- Histórico e favoritos (ocultos, acessíveis via atalhos) -->
-  <div id="painel-lateral" style="display:none;">
-    <!-- Será implementado no JS -->
   </div>
 
   <script src="config.js"></script>
