@@ -1,5 +1,6 @@
 // ============================================================
 //  app.js – Lógica principal + integração com GitHub
+//  (com suporte à pasta "arquivos/" no repositório)
 // ============================================================
 
 // Estado global
@@ -304,7 +305,7 @@ if (localStorage.getItem('tema') === 'dark') {
 }
 
 // ==================================================================
-// ==================== NOVIDADES: GITHUB ============================
+// ==================== GITHUB COM PASTA "arquivos/" ================
 // ==================================================================
 
 // --- Configuração do GitHub (token + repositório) ---
@@ -339,10 +340,10 @@ document.getElementById('btnGitHubConfig').addEventListener('click', () => {
   }
 });
 
-// --- Função auxiliar para obter o SHA de um arquivo no GitHub ---
+// --- Função auxiliar para obter o SHA de um arquivo na pasta "arquivos/" ---
 async function obterShaArquivoGitHub(nomeArquivo) {
   if (!githubToken || !githubRepo) return null;
-  const caminho = encodeURIComponent(nomeArquivo);
+  const caminho = `arquivos/${encodeURIComponent(nomeArquivo)}`;
   const url = `https://api.github.com/repos/${githubRepo}/contents/${caminho}`;
   try {
     const response = await fetch(url, {
@@ -358,12 +359,12 @@ async function obterShaArquivoGitHub(nomeArquivo) {
   }
 }
 
-// --- Enviar um arquivo para o GitHub ---
+// --- Enviar um arquivo para a pasta "arquivos/" do GitHub ---
 async function enviarArquivoParaGitHub(nomeArquivo, conteudo) {
   if (!githubToken) { alert('Token não configurado. Clique em 🔑 primeiro.'); return false; }
   if (!githubRepo) { alert('Repositório não configurado.'); return false; }
 
-  const caminho = encodeURIComponent(nomeArquivo);
+  const caminho = `arquivos/${encodeURIComponent(nomeArquivo)}`;
   const url = `https://api.github.com/repos/${githubRepo}/contents/${caminho}`;
 
   // Obter SHA atual (se existir)
@@ -412,7 +413,7 @@ document.getElementById('btnGitHubPull').addEventListener('click', async () => {
   if (!arquivoAtual) return alert('Nenhum arquivo aberto.');
   if (!githubToken || !githubRepo) { alert('Configure token e repositório (🔑).'); return; }
 
-  const caminho = encodeURIComponent(arquivoAtual.nome);
+  const caminho = `arquivos/${encodeURIComponent(arquivoAtual.nome)}`;
   const url = `https://api.github.com/repos/${githubRepo}/contents/${caminho}?ref=${githubBranch}`;
 
   try {
@@ -464,5 +465,4 @@ document.getElementById('btnGitHubSync').addEventListener('click', async () => {
 editor.placeholder = 'Clique em "Abrir Pasta" para começar.';
 atualizarContador();
 
-// Se já houver token salvo, exibe uma mensagem no console (apenas informativo)
 if (githubToken) console.log('🔑 Token do GitHub carregado.');
